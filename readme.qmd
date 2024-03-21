@@ -1,0 +1,25 @@
+---
+title: 'Homework 2, BST 258, Causal Inference Theory and Practice'
+format: gfm
+--- 
+
+<!-- 
+In this repository you will find my review of Pearl's 1995 paper (`reading_review/`) and 
+my homework, submitted as a Quarto document (`hw1/`). 
+
+Homework Quarto file: [hw1/hw1-christian-testa.qmd](hw1/hw1-christian-testa.qmd)
+
+Homework pdf file: [hw1/hw1-christian-testa.pdf](hw1/hw1-christian-testa.pdf)
+
+Reading Review .tex file: [reading_review/review_pearl1995_christian_testa.tex](reading_review/review_pearl1995_christian_testa.tex)
+
+`renv` lock file: [renv.lock](renv.lock)
+
+`.here` file: [.here](.here)
+
+R Environment Details: 
+
+```{r}
+sessionInfo()
+```
+-->

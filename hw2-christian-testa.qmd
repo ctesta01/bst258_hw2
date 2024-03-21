@@ -1,0 +1,210 @@
+---
+pdf-engine: pdflatex
+format: 
+  pdf:
+    include-in-header:
+      - text: |
+          \usepackage[
+            top = 1in, 
+            bottom = 1in, 
+            left = .75in, 
+            right = .75in]{geometry} 
+
+          \usepackage{float}
+          \usepackage{bm}
+          \usepackage{cancel}
+          \usepackage{dsfont}
+          \usepackage{framed}
+          \usepackage{mdframed}
+          \usepackage{mathtools}
+          \usepackage{soul}
+          \usepackage{algorithm}
+          \usepackage{algpseudocode}
+          \usepackage{nicefrac}
+          \usepackage{graphicx}
+          \usepackage{amsmath,amssymb,latexsym}
+          \addtokomafont{disposition}{\rmfamily}
+          \DeclareMathOperator*{\argmax}{arg\,max}
+          \DeclareMathOperator*{\argmin}{arg\,min}
+          \newcommand{\items}[1]{\begin{itemize} #1 \end{itemize}}
+          \newcommand{\enums}[1]{\begin{enumerate} #1 \end{enumerate}}
+          \newcommand{\E}{\mathbb{E}}
+          \newcommand{\Var}{\text{Var}}
+          \newcommand{\Cov}{\text{Cov}}
+          \newcommand{\R}{\mathbb{R}}
+          \newcommand{\T}{\mathtt{T}}
+          \renewcommand{\P}{\mathbb{P}}
+          \newcommand{\sf}[1]{\mathsf{#1}}
+          \newcommand{\supp}[1]{\text{supp}(#1)}
+          \newcommand\independent{\perp\!\!\!\perp}
+          \def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+          \newcommand*{\vertbar}{\rule[-1ex]{0.5pt}{2.5ex}}
+          \newcommand*{\horzbar}{\rule[.5ex]{2.5ex}{0.5pt}}
+          % \renewcommand{\d}[0]{\mathrm{d}}
+          \newcommand{\pp}[2][]{\frac{\partial#1}{\partial#2}}
+          \newcommand{\dd}[2][]{\frac{\mathrm d#1}{\mathrm d#2}}
+
+          \setlength{\parindent}{15pt}
+
+          \usepackage{float}
+          \usepackage{fancyhdr}
+
+          \pagestyle{fancy} 
+          \fancyhf{} 
+
+          \lhead{\footnotesize BST 258: Causal Inference, Theory \& Practice \\ Christian Testa}% 
+          % \rhead{\footnotesize Christian Testa} 
+          \rhead{\footnotesize Homework 2\\Due March 22nd 2024}
+          \cfoot{\thepage} 
+---
+
+## Question 1: Inverse Probability Weighting
+
+### Q1 Part 1: Theory 
+
+1. Three assumptions were required: consistency, 
+no unmeasured confounding, and positivity. 
+
+Conditional exchangeability is the statement that 
+$Y^a \independent A | L$ for all levels $a$ of the covariate. In words, it's saying that the potential outcomes are independent
+of the treatment assigned after taking into account the level of covariates. The language "conditional exchangeability" is 
+used in observational settings as the observational analogue
+to "conditional randomization." Conditional exchangeability 
+implies that after we control for covariates, individuals'
+probability of exposure to the treatment $A=a$ is independent
+of what their outcome will be; i.e., after adjusting for
+the observed covariates $L$, there is no remaining
+bias towards exposing those who will fair better or worse 
+under treatment to the treatment level $A = a$.
+
+2. It is useful to recall how we defined the IPW estimator
+so we can see exactly how the assumptions were applied: 
+
+$$\hat \psi^{IPW}_n \coloneqq 
+\sf P_n \left\{ \left( \frac{A}{p} - \frac{1-A}{1-p} \right) Y \right\}.$$ 
+
+Splitting the above into two separate parts (e.g., 
+estimators for $Y^1$ and $Y^0$), we have 
+
+$\E[Y^a] = \E[Y | A= a] = \E_L[\E[Y | A = a, L]]$ by consistency
+and the no unmeasured confounding assumption. 
+
+Now, by the positivity assumption, $\E[\mathds{1}(A = a) | L = l] > 0$
+for all possible levels of $L$. As a result, we can write 
+$$\E[Y | A = a, L] = 
+\frac{\E [Y | A = a, L] \times \E [\mathds 1(A = a) | L]}{\E[\mathds{1}(A = a) | L]} = 
+ \frac{\E [Y \mathds 1(A = a)| A = a, L] }{\E[\mathds{1}(A = a) | L]} = 
+ \frac{\E[Y\mathds 1(A = a) | A = a, L]}{\P(A = a | L)},$$
+where we used the no-unmeasured-confounding $(Y^{A = a} \independent A | L\;\; \forall a)$ and consistency assumptions together (implying
+$(Y|A=a) \independent A | L$) to combine the 
+inside of the expectations in the numerator. It's necessary to have positivity so that the denominator $\neq 0$ 
+and the quantity above is defined. 
+
+Taking the outside expectation, we derive that 
+$$
+\begin{aligned}
+\E[Y^a] & = \E_L[\E[Y | A = a, L]] \\ 
+& = \E_L \left[ \frac{\E[Y\mathds 1(A = a) | A = a, L]}{\P(A = a | L)} \right] \\
+& = \frac{\E[Y \mathds 1({A = a})]}{\P[\mathds{1}(A = a)]}.
+\end{aligned}
+$$
+
+Finally, replacing theoretical expectations with empirical estimators for the numerator and denominator, we have the following formula for the IPW estimator: 
+
+$$
+\begin{aligned}
+\hat \psi_{n}^{IPW} & = \hat \E[Y^{1}] - \hat \E[Y^{0}] \\ 
+& = \frac{\hat \E \left[ Y \mathds 1 (A = 1) \right]}{\P(A = 1 )} - 
+\frac{\hat \E \left[ Y \mathds 1 (A = 0) \right]}{\P(A = 0)}, \text{ which, when $A$ is binary, can be written as } \\ 
+& = \mathsf P_n \left\{ \left( \frac{A}{p} - \frac{1-A}{1-p} \right) Y \right\},
+\end{aligned}
+$$
+which completes the derivation of the IPW estimator and shows how 1) consistency, 2) no unmeasured confounding, and 3) positivity were used in the derivation. 
+
+### Q2 Part 2: Application
+
+#### Inverse Probability Weighted Estimation
+
+```{r}
+#| out.width: 100%
+#| fig.height: 2.75
+#| fig.width: 8
+
+{{< include q1p2a.R >}}
+```
+
+  a. The distribution for the stabilized weights is concentrated around
+much smaller values, and they are more balanced in overall mass 
+(e.g., sum of weights within groups) among the treated and 
+untreated groups. 
+
+  b. 
+
+```{r}
+{{< include q1p2b.R >}}
+```
+
+  c. Two usable methods for calculating the variance and 95% confidence
+  interval for an estimated ATE are the bootstrap and the 
+  robust variance estimator, also called the Huber-White Sandwich estimator. 
+
+```{r}
+{{< include q1p2c.R >}}
+```
+
+  d. In the nonstabilized model, we had an effect estimate of `r round(ipw_nonstabilized_boot_ci[2]$t0, 2)` (Bootstrap 95% CI: `r round(ipw_nonstabilized_boot_ci[4]$normal[2:3], 3)`). In the stabilized model, we had an effect of `r round(ipw_stabilized_boot_ci[2]$t0, 2)` (Bootstrap 95% CI: `r round(ipw_stabilized_boot_ci[4]$normal[2:3], 3)`). 
+  One advantage of the stabilized method is that the 95% CI are slightly
+  narrower, reflecting that using the stabilized weights is more efficient. (This is 
+  also reflected in the smaller standard error using the stabilized weights). 
+
+#### Double Robust Estimation 
+
+a) 
+
+```{r}
+{{< include q1p2q2a.R >}}
+```
+
+b) 
+
+The point-estimate for $\hat \psi_n^{\text{DR}}$ is `r round(psi_hat_DR_n, 2)`. 
+In comparison, the nonstabilized IPW and stabilized estimator point 
+estimates were `r round(ipw_nonstabilized_boot_ci[2]$t0, 2)` and `r round(ipw_stabilized_boot_ci[2]$t0, 2)`. 
+
+c)
+
+```{r}
+{{< include q1p2q2c.R >}}
+```
+
+Standard error from the nonstabilized IPW: `r round(sd(ipw_nonstabilized_boot$t), 3)`.
+
+Standard error from the stabilized IPW: `r round(sd(ipw_stabilized_boot$t), 3)`.
+
+Standard error from the Double-Robust estimator: `r round(sd(DR_boot$t), 3)`.
+
+## Question 2: Standardization and Parametric G-Computation 
+
+### Part 1: Theory 
+
+1. 
+
+2. 
+
+3. 
+
+### Part 2: Application
+
+1. 
+
+  a. 
+
+  b. 
+
+  c. 
+
+2. 
+
+  a. 
+
+  b. 
