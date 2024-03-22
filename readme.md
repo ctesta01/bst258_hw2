@@ -10,7 +10,7 @@ standalone .R scripts and use the Quarto tags
 Also, the strategy of standalone scripts worked out nicer for me since I
 tend to use VS Code and VS Code seems to have this glitch where after a
 while, it stops doing a good job of recognizing “fenced code
-environments” (e.g., the sections denoted within ```` ```r ```` and
+environments” (e.g., the sections denoted within ```` ```{r} ```` and
 ```` ``` ````), so standalone scripts helped to work around this issue.
 Apologies the organization of the scripts isn’t better.
 
