@@ -3,23 +3,26 @@ title: 'Homework 2, BST 258, Causal Inference Theory and Practice'
 format: gfm
 --- 
 
-<!-- 
-In this repository you will find my review of Pearl's 1995 paper (`reading_review/`) and 
-my homework, submitted as a Quarto document (`hw1/`). 
+In this repository you will find my homework 2 for 
+BST 258, which is formatted as a Quarto document. 
+For this homework, since there was a lot of code to write, I found it 
+more helpful to break apart the code into standalone .R scripts 
+and use the Quarto tags `{{< include script_file.R >}}`. 
 
-Homework Quarto file: [hw1/hw1-christian-testa.qmd](hw1/hw1-christian-testa.qmd)
+Also, 
+the strategy of standalone scripts worked out nicer for me since I tend to use VS Code and 
+VS Code seems to have this glitch where after a while, it stops doing a 
+good job of recognizing "fenced code environments" (e.g., the sections denoted
+within ` ```{r} ` and ` ``` `), so standalone scripts helped to work around this issue.   Apologies the organization of the scripts isn't better. 
 
-Homework pdf file: [hw1/hw1-christian-testa.pdf](hw1/hw1-christian-testa.pdf)
+Homework Quarto file: [hw2-christian-testa.qmd](hw2-christian-testa.qmd)
 
-Reading Review .tex file: [reading_review/review_pearl1995_christian_testa.tex](reading_review/review_pearl1995_christian_testa.tex)
+Homework pdf file: [hw2-christian-testa.pdf](hw2-christian-testa.pdf)
 
 `renv` lock file: [renv.lock](renv.lock)
-
-`.here` file: [.here](.here)
 
 R Environment Details: 
 
 ```{r}
 sessionInfo()
 ```
--->

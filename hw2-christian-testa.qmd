@@ -1,5 +1,8 @@
 ---
 pdf-engine: pdflatex
+monofont: 'Source Code Pro'
+monofontoptions: 
+  - Scale=0.55
 format: 
   pdf:
     include-in-header:
@@ -58,12 +61,25 @@ format:
           \cfoot{\thepage} 
 ---
 
+**Frontmatter:** This homework is online in a GitHub repository
+at [github.com/ctesta01/bst258_hw2](https://github.com/ctesta01/bst258_hw2/). The repository is equipped
+with an `renv.lock` file, and best-practices like using `{here}` to avoid
+localized paths were used. Additionally, the `sessionInfo()` is reported on as
+well to facilitate maximal reproducibility.
+
 ## Question 1: Inverse Probability Weighting
 
 ### Q1 Part 1: Theory 
 
-1. Three assumptions were required: consistency, 
-no unmeasured confounding, and positivity. 
+1. No, we do not need to invoke conditional exchangeability 
+to establish that $A$ and $L$ are statistically independent 
+or to see that the mean among a treatment level $A = a$ is 
+equivalent to the standardized mean at that treatment level. 
+
+Instead, what conditional exchangeability gets us is that the 
+mean among the treatment level $A=a$ in the pseudo-population
+is equal to the counterfactual mean $\E[Y^a]$, and likewise
+for the standardized mean at that treatment level. 
 
 Conditional exchangeability is the statement that 
 $Y^a \independent A | L$ for all levels $a$ of the covariate. In words, it's saying that the potential outcomes are independent
@@ -86,8 +102,8 @@ $$\hat \psi^{IPW}_n \coloneqq
 Splitting the above into two separate parts (e.g., 
 estimators for $Y^1$ and $Y^0$), we have 
 
-$\E[Y^a] = \E[Y | A= a] = \E_L[\E[Y | A = a, L]]$ by consistency
-and the no unmeasured confounding assumption. 
+$\E[Y^a] = \E[Y \mathds 1(A = a)| A= a] = \E_L[\E[Y | A = a, L]]$ by consistency
+and the conditional exchangeability assumption. 
 
 Now, by the positivity assumption, $\E[\mathds{1}(A = a) | L = l] > 0$
 for all possible levels of $L$. As a result, we can write 
@@ -95,7 +111,7 @@ $$\E[Y | A = a, L] =
 \frac{\E [Y | A = a, L] \times \E [\mathds 1(A = a) | L]}{\E[\mathds{1}(A = a) | L]} = 
  \frac{\E [Y \mathds 1(A = a)| A = a, L] }{\E[\mathds{1}(A = a) | L]} = 
  \frac{\E[Y\mathds 1(A = a) | A = a, L]}{\P(A = a | L)},$$
-where we used the no-unmeasured-confounding $(Y^{A = a} \independent A | L\;\; \forall a)$ and consistency assumptions together (implying
+where we used the conditional exchangeability $(Y^{A = a} \independent A | L\;\; \forall a)$ and consistency assumptions together (implying
 $(Y|A=a) \independent A | L$) to combine the 
 inside of the expectations in the numerator. It's necessary to have positivity so that the denominator $\neq 0$ 
 and the quantity above is defined. 
@@ -114,14 +130,14 @@ Finally, replacing theoretical expectations with empirical estimators for the nu
 $$
 \begin{aligned}
 \hat \psi_{n}^{IPW} & = \hat \E[Y^{1}] - \hat \E[Y^{0}] \\ 
-& = \frac{\hat \E \left[ Y \mathds 1 (A = 1) \right]}{\P(A = 1 )} - 
-\frac{\hat \E \left[ Y \mathds 1 (A = 0) \right]}{\P(A = 0)}, \text{ which, when $A$ is binary, can be written as } \\ 
+& = \frac{\hat \E \left[ Y \mathds 1 (A = 1) \right]}{\hat\P(A = 1 )} - 
+\frac{\hat \E \left[ Y \mathds 1 (A = 0) \right]}{\hat\P(A = 0)}, \text{ which, when $A$ is binary, can be written as } \\ 
 & = \mathsf P_n \left\{ \left( \frac{A}{p} - \frac{1-A}{1-p} \right) Y \right\},
 \end{aligned}
 $$
-which completes the derivation of the IPW estimator and shows how 1) consistency, 2) no unmeasured confounding, and 3) positivity were used in the derivation. 
+which completes the derivation of the IPW estimator and shows how 1) consistency, 2) conditional exchangeability, and 3) positivity were used in the derivation. 
 
-### Q2 Part 2: Application
+### Q1 Part 2: Application
 
 #### Inverse Probability Weighted Estimation
 
@@ -129,6 +145,7 @@ which completes the derivation of the IPW estimator and shows how 1) consistency
 #| out.width: 100%
 #| fig.height: 2.75
 #| fig.width: 8
+#| cache: true
 
 {{< include q1p2a.R >}}
 ```
@@ -141,70 +158,240 @@ untreated groups.
   b. 
 
 ```{r}
+#| cache: true
 {{< include q1p2b.R >}}
 ```
 
-  c. Two usable methods for calculating the variance and 95% confidence
-  interval for an estimated ATE are the bootstrap and the 
-  robust variance estimator, also called the Huber-White Sandwich estimator. 
+  c. There are at least three methods for calculating the variance and 95% confidence
+  interval for an estimated ATE: the bootstrap, the 
+  robust variance estimator, also called the Huber-White Sandwich estimator,
+  and to use generalized estimating equations. 
 
 ```{r}
+#| cache: true
 {{< include q1p2c.R >}}
 ```
 
-  d. In the nonstabilized model, we had an effect estimate of `r round(ipw_nonstabilized_boot_ci[2]$t0, 2)` (Bootstrap 95% CI: `r round(ipw_nonstabilized_boot_ci[4]$normal[2:3], 3)`). In the stabilized model, we had an effect of `r round(ipw_stabilized_boot_ci[2]$t0, 2)` (Bootstrap 95% CI: `r round(ipw_stabilized_boot_ci[4]$normal[2:3], 3)`). 
-  One advantage of the stabilized method is that the 95% CI are slightly
-  narrower, reflecting that using the stabilized weights is more efficient. (This is 
-  also reflected in the smaller standard error using the stabilized weights). 
+Nonstabilized IPW Estimate, Bootstrap Standard Error, and 95% CI: \newline
+$\hat \psi^{IPW}$ (Nonstabilized) $=$ 
+`r round(ipw_nonstabilized_boot$t0, 3)`, SE = `r round(sd(ipw_nonstabilized_boot$t), 3)`,
+95% CI: `r round(ipw_nonstabilized_boot_ci[4]$normal[2:3], 3)`. 
 
-#### Double Robust Estimation 
+Stabilized IPW Estimate, Bootstrap Standard Error, and 95% CI: \newline
+$\hat \psi^{IPW}$ (Stabilized) = `r round(ipw_stabilized_boot$t0, 3)`, SE = 
+`r round(sd(ipw_stabilized_boot$t), 3)`, 95% CI: `r round(ipw_stabilized_boot_ci[4]$normal[2:3], 3)`.
 
-a) 
+For completeness, it is interesting to also check what the standard 
+error from using the robust (sandwich) approach and the generalized estimating equations approach: 
 
 ```{r}
+library(sandwich)
+sandwich_std_err_nonstabilized <- sqrt(vcovHC(nonstabilized_ipw_model)['qsmk', 'qsmk'])
+sandwich_std_err_stabilized <- sqrt(vcovHC(stabilized_ipw_model)['qsmk', 'qsmk'])
+```
+
+We get a standard error from the robust variance estimation 
+method of `r round(sandwich_std_err_nonstabilized, 3)` for the nonstabilized model, and 
+`r round(sandwich_std_err_stabilized, 3)` for the stabilized model. 
+
+```{r}
+library(geepack)
+use_gee_for_std_err <- function(weights) {
+  gee_model <- geeglm(wt82_71 ~ qsmk, data = nhefs, weights = weights, id = 1:nrow(nhefs))
+  gee_std_err <- broom::tidy(gee_model) |> dplyr::filter(term == 'qsmk') |> 
+    dplyr::select(std.error) %>% `[[`(1)
+}
+gee_std_err_nonstabilized <- use_gee_for_std_err(nhefs$weight)
+gee_std_err_stabilized <- use_gee_for_std_err(nhefs$stabilized_weight)
+```
+We get a standard error from the generalized-estimating-equations method
+of `r round(gee_std_err_nonstabilized, 3)` for the nonstabilized model and 
+`r round(gee_std_err_stabilized, 3)`. 
+
+  d. In the nonstabilized model, we had an effect estimate of `r round(ipw_nonstabilized_boot_ci[2]$t0, 2)` (Bootstrap 95% CI: `r round(ipw_nonstabilized_boot_ci[4]$normal[2:3], 3)`). In the stabilized model, we had an effect of `r round(ipw_stabilized_boot_ci[2]$t0, 2)` (Bootstrap 95% CI: `r round(ipw_stabilized_boot_ci[4]$normal[2:3], 3)`). These are essentially 
+  the same as each other, so that's why I was motivated to check the 
+  robust standard errors and GEE estimated standard errors, but those are also 
+  the same for the nonstabilized vs. stabilized models.  This all together
+  suggests that stabilization did not help us with efficiency at all, so maybe
+  this is a cohort that was already balanced "enough" for stabilization to 
+  not make very much of a difference. That's further supported by the covariate
+  balance tables (before weighting) that I produced above (Table 2).
+
+#### 2. Double Robust Estimation 
+
+a) This question asks us to "extract predictions from this fitted model necessary
+to compute the DR estimator," so I've fit and extracted the necessary variables in the 
+code below.  The implied point-estimate is reported immediately below in part b. 
+
+```{r}
+#| cache: true
 {{< include q1p2q2a.R >}}
 ```
 
-b) 
-
-The point-estimate for $\hat \psi_n^{\text{DR}}$ is `r round(psi_hat_DR_n, 2)`. 
+b)  The point-estimate for $\hat \psi_n^{\text{DR}}$ is `r round(psi_hat_DR_n, 2)`. 
 In comparison, the nonstabilized IPW and stabilized estimator point 
 estimates were `r round(ipw_nonstabilized_boot_ci[2]$t0, 2)` and `r round(ipw_stabilized_boot_ci[2]$t0, 2)`. 
 
-c)
+c) I opted to use bootstrap to estimate the standard error of the DR estimator below:
 
 ```{r}
+#| cache: true
 {{< include q1p2q2c.R >}}
 ```
+
+DR Estimate $\hat \psi^{DR} = `r round(DR_boot$t0, 3)`$, Bootstrap Standard Error: `r round(sd(DR_boot$t), 3)`, and 95% CI: `r round(DR_boot_ci[4]$normal[2:3], 3)`. 
+
+In comparison: 
 
 Standard error from the nonstabilized IPW: `r round(sd(ipw_nonstabilized_boot$t), 3)`.
 
 Standard error from the stabilized IPW: `r round(sd(ipw_stabilized_boot$t), 3)`.
 
-Standard error from the Double-Robust estimator: `r round(sd(DR_boot$t), 3)`.
+
+<!-- Standard error from the Double-Robust estimator: `r round(sd(DR_boot$t), 3)`. --> 
 
 ## Question 2: Standardization and Parametric G-Computation 
 
 ### Part 1: Theory 
 
-1. 
+1. Since there are three random quantities ($L,\; A,\; Y$) in the IPW estimator, we can see that 
+the expectation can be broken apart as 
 
-2. 
+$$\E \left[ \frac{\mathds 1(A = a) Y}{\P(A | L)} \right] = 
+\sum_l \int_y \sum_{a'} \frac{\mathds 1(A = a) Y }{\P(A = a' | L = l)} \P(Y = y, A = a', L = l) \mathrm d y.$$
 
-3. 
+Of course, with the indicator $\mathds 1(A = a)$, for all values $a' \neq a$, the 
+summand is zero, so the above quantity can be rewritten: 
+
+$$
+ = \sum_l \int_y \frac{y}{\P(A = a | L = l)} \P(Y = y, A = a, L = l) \mathrm d y. 
+$$
+
+We can pull out the denominator from out of the inside integral since that does not depend on $Y$:
+
+$$
+= \sum_l \frac{1}{\P(A = a | L = l)} \int_y y \P(Y = y, A = a, L = l) \mathrm d y.
+$$
+
+Using the definition of conditional probability ($\P(X | Y) = \P(X, Y) / \P(Y)$), we can 
+rewrite the inside of the integral as 
+
+$$
+\begin{aligned}
+= & \sum_l \frac{1}{\P(A = a | L = l)} \int_y y \P(Y = y \mid A = a, L = l) \P(A = a, L = l) \mathrm d y \\ 
+& \text{ applying the same trick again } \\ 
+= & \sum_l \frac{1}{\cancel{\P(A = a | L = l)}} \int_y y \P(Y = y \mid A = a, L = l) \cancel{\P(A = a | L = l)} P(L = l) \mathrm d y.
+\end{aligned}
+$$
+
+Now we can see that the integral is just the conditional expectation of $Y$ given $A = a$ and $L = l$ 
+multiplied by an extra $\P(L = l)$, which can be taken out from inside the integral. This allows us to finally write it in the form 
+
+$$= \sum_l \E[Y | A = a, L = l ] \P(L = l),$$
+
+showing the equivalence between the IPW estimator for $Y^a$ and the standardized mean 
+for individuals at treatment level $a$. 
+
+2. Conditional exchangeability and consistency together allow us to replace 
+$(Y | A = a, L)$ with $(Y^a | L)$, so we have that the standardized mean
+
+$$\sum_l \E[Y | A = a, L = l] \P(L = l) = \sum_l \E[Y^a | L = l] P(L = l) = \E_L[\E[Y^a | L]] = \E[Y^a],$$
+
+where the last line holds by the law of iterated expectations.
+
+3. If we _knew_ that the outcome model were correctly specified, we might 
+prefer to use the plug-in estimator because it would be more efficient. 
+However, if we thought there was a possibility the outcome model 
+was wrong (which is often the case), then the doubly robust estimator 
+could still be consistent if the treatment model is correctly specified,
+so we might prefer the doubly-robust estimator because it has
+the doubly-robust consistency property. 
+
 
 ### Part 2: Application
 
 1. 
 
-  a. 
+```{r}
+{{< include q2_1a.R >}}
+```
 
-  b. 
+  a. From the standardized method, we get an effect estimate of `r round(standardized_estimate, 3)`. 
 
-  c. 
+  b. Essentially, we're getting all estimates around 3.5 from every method so far: 
+  the IPW nonstabilized and stabilized methods gave us `r round(ipw_nonstabilized_boot$t0, 3)`,
+  `r round(ipw_stabilized_boot$t0, 3)`, the doubly robust method gave 
+  us `r round(DR_boot$t0, 3)`, and now we're getting `r round(standardized_estimate, 3)`. 
+  There are not very big differences to explain, so it seems that the three 
+  methods are in close agreement with one another in this example. 
+
+  c. No, because while they estimate the same effects, G-Computation 
+  uses an outcome model while IP Weighting only involves modeling the 
+  treatment mechanism and then taking an empirical mean, so due to 
+  finite sample variability, the use of these different models may 
+  result in differences in the estimates from G-Computation and IP Weighting. 
 
 2. 
 
-  a. 
+  a. The term "doubly robust" refers to the fact that if either the 
+  outcome model $\hat m_a(L)$ is correctly specified or the 
+  propensity score model $\hat g(L)$ is correctly specified, then 
+  $\hat \psi_n^{\mathrm{DR}}$ will be consistent for the causal 
+  average treatment effect. 
 
   b. 
+
+The implementation for the doubly-robust estimator remains the same 
+as above, repeated here for completeness: 
+
+```{r}
+#| eval: false
+{{< include q1p2q2a.R >}}
+```
+
+This yielded the estimate `r round(psi_hat_DR_n, 3)`. 
+
+However, to produce estimates for the analytic confidence intervals for the DR
+estimator, we need to turn to some theory to motivate our approach to estimating
+the variance of the doubly robust estimator. 
+
+Recall that we write the doubly robust estimator as 
+
+$$
+\hat \psi_n^{\mathrm{DR}} = n^{-1} \sum_{i=1}^n \left[ 
+  \frac{A_i}{\hat g(L_i)} - \frac{1-A_i}{1 - \hat g(L_i)} \left( Y - \hat m_{A_i}(L_i) \right) + \hat m_1(L_i) - \hat m_0(L_i)
+\right].
+$$
+
+We learned in class that the doubly robust estimator is asymptotically 
+linear, and this means that 
+$$
+\hat \Psi(\mathsf P_n) - \Psi(\mathsf P_0) = n^{-1} \sum D(\mathsf P_0)(O_i) + o_p(n^{-1/2}),
+$$
+with an appropriate specification of the influence function.
+
+Further, the asymptotic variance of the estimator is consistently 
+estimated by the variance of the empirical influence function $D(\mathsf P_n)(O)$, 
+so we have that 
+
+$$\widehat{\Var}\left[ \hat \Psi(\mathsf P_n) \right] = 
+\frac{\Var[D(\mathsf P_n)(O)]}{n},$$
+
+so we can calculate an estimate for the asymptotic variance of our 
+doubly-robust estimator as 
+
+```{r}
+# recall the first_term and second_term we calculated above in 
+# Question 1 Part 2, #2 Doubly Robust Estimation, Part C:
+empirical_IF_var <- var(first_term + second_term) / nrow(nhefs)
+empirical_IF_std_err <- sqrt(empirical_IF_var)
+```
+
+These give an estimate of the asymptotic variance as 
+`r round(empirical_IF_var, 3)` and standard error as 
+`r round(empirical_IF_std_err, 3)`. 
+
+Invoking the asymptotic normality of the doubly robust estimator, 
+these suggest a point-estimate and 95% (analytic) CI of `r round(psi_hat_DR_n, 3)` 
+(`r round(psi_hat_DR_n + qnorm(.025)*empirical_IF_std_err, 3)`, 
+`r round(psi_hat_DR_n + qnorm(.975)*empirical_IF_std_err, 3)`).

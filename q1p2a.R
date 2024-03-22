@@ -1,8 +1,7 @@
 suppressMessages(library(tidyverse))
 suppressMessages(library(magrittr))
 suppressMessages(library(here))
-
-nhefs <- haven::read_sas(here("homework/hw2/data/nhefs.sas7bdat"))
+nhefs <- haven::read_sas(here("data/nhefs.sas7bdat"))
 
 # restrict to complete case analysis
 nhefs <- nhefs |> filter(
@@ -12,38 +11,44 @@ nhefs <- nhefs |> filter(
 # look at variables data dictionary
 # DT::datatable(labelled::generate_dictionary(nhefs))
 
-# to calculate the weights for the IPW estimator 
-# we need to calculate the probability of treatment assignment
-trt_model <- glm(
-  qsmk ~ 
-    sex + age + age^2 + race + education + smokeintensity + smokeintensity^2 + 
-    smokeyrs + smokeyrs^2 + active + exercise + wt71 + wt71^2,
-  family = binomial(link = "logit"),
-  data = nhefs
-)
+# create the inverse probability weights
+create_weights <- function(data, stabilize = FALSE) { 
+  # to calculate the weights for the IPW estimator 
+  # we need to calculate the probability of treatment assignment
+  trt_model <- glm(qsmk ~ 
+      sex + poly(age, 2) + race + factor(education) + poly(smokeintensity,2) +  
+      poly(smokeyrs, 2) + factor(active) + factor(exercise) + poly(wt71, 2),
+    family = binomial(link = "logit"),
+    data = data)
+  data$propensity_score <- predict(trt_model, type = "response")
 
-nhefs$propensity_score <- predict(trt_model, type = "response")
+  # weights
+  data$weight <- ifelse(data$qsmk == 1, 
+    1 / data$propensity_score, 
+    1 / (1 - data$propensity_score))
 
-# weights
-nhefs$weight <- ifelse(nhefs$qsmk == 1, 
-  1 / nhefs$propensity_score, 
-  1 / (1 - nhefs$propensity_score))
+  if (stabilize) {
+    # stabilized weights 
+    data %<>% group_by(qsmk) %>% 
+      # a trick is being used here: 
+      # since the table produced by prop.table looks like: 
+      #           0         1 
+      #   0.7372621 0.2627379 
+      # we can use qsmk + 1 to access the corresponding element 
+      # representing Pr(qsmk = 0) and Pr(qsmk = 1)
+      # 
+      # the stabilized weights are just 
+      # Pr(A = a) / Pr(A = a | L = l) 
+      mutate(stabilized_weight = 
+        as.numeric(prop.table(table(data$qsmk))[qsmk+1]) *
+        weight) %>%
+      ungroup()
+  }
+  return(data)
+}
 
-# stabilized weights 
-nhefs %<>% group_by(qsmk) %>% 
-  # a trick is being used here: 
-  # since the table produced by prop.table looks like: 
-  #           0         1 
-  #   0.7372621 0.2627379 
-  # we can use qsmk + 1 to access the corresponding element 
-  # representing Pr(qsmk = 0) and Pr(qsmk = 1)
-  # 
-  # the stabilized weights are just 
-  # Pr(A = a) / Pr(A = a | L = l) 
-  mutate(stabilized_weight = 
-    as.numeric(prop.table(table(nhefs$qsmk))[qsmk+1]) / 
-    weight) %>%
-  ungroup()
+# create the weights
+nhefs %<>% create_weights(stabilize = TRUE)
 
 # compare the distribution of the weights
 nhefs %>% 
@@ -51,7 +56,7 @@ nhefs %>%
   summarize(
     across(c(weight, stabilized_weight), .fns = list(mean = mean, sd = sd))
   ) |> 
-  knitr::kable()
+  knitr::kable(caption = 'Comparison of IP Weights by Treatment Group')
 
 # check the balance of the covariates
 # before reweighting:
@@ -61,7 +66,7 @@ nhefs %>%
     c(sex, age, race, education, smokeintensity, smokeyrs, active, exercise, wt71),
     ~ mean(.x)
   )) |>
-  knitr::kable()
+  knitr::kable(caption = 'Balance of Covariates before Reweighting')
 
 # after reweighting:
 nhefs %>% 
@@ -70,7 +75,7 @@ nhefs %>%
     c(sex, age, race, education, smokeintensity, smokeyrs, active, exercise, wt71),
     ~ Hmisc::wtd.mean(.x, weights = weight)
   )) |>
-  knitr::kable()
+  knitr::kable(caption = 'Balance of Covariates after Weighting (Nonstabilized)')
 
 # using stabilized weights
 nhefs %>% 
@@ -79,7 +84,7 @@ nhefs %>%
     c(sex, age, race, education, smokeintensity, smokeyrs, active, exercise, wt71),
     ~ Hmisc::wtd.mean(.x, weights = stabilized_weight)
   )) |>
-  knitr::kable()
+  knitr::kable(caption = 'Balance of Covariates after Weighting (Stabilized)')
 
 # compare distributions of weights 
 nhefs |> 
@@ -96,4 +101,4 @@ nhefs |>
     c('stabilized_weight' = 'Stabilized', 'weight' = 'Nonstabilized'))) + 
   theme_minimal() + 
   ggtitle("Comparison of Stabilized vs. Unstabilized Weights") + 
-  labs(fill = 'Weight Type', x = 'Weight', y = 'Frequency') 
+  labs(fill = 'Quit Smoking', x = 'Weight', y = 'Frequency') 
