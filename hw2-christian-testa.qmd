@@ -247,6 +247,22 @@ Standard error from the nonstabilized IPW: `r round(sd(ipw_nonstabilized_boot$t)
 
 Standard error from the stabilized IPW: `r round(sd(ipw_stabilized_boot$t), 3)`.
 
+\begin{framed}
+Errata: I realized this morning (Sat Mar 23) I forgot to state the conditions 
+under which bootstrap estimates for the standard error are valid. 
+
+In essence, the conditions are that the empirical distribution of the observed data must 
+be close to the true data generating distribution. In the notation this class has 
+been using, we would say that we require $\mathsf P_n$ to be close to $\mathsf P_0$. Additionally,
+the individual data observations must be independent from one another because we 
+sample them with equal probability with replacement in the bootstrap process. 
+
+It's worth noting that when we have a very small sample size, $\mathsf P_n$ is likely to be 
+more distant to $\mathsf P_0$, making the bootstrap estimates highly unstable. Here, 
+we have `r nrow(nhefs)` observations, so I would not think that the 
+sample size poses an issue using bootstrap. 
+\end{framed}
+
 
 <!-- Standard error from the Double-Robust estimator: `r round(sd(DR_boot$t), 3)`. --> 
 
